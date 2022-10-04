@@ -2,10 +2,13 @@
 package database
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/flashbots/go-boost-utils/types"
 	"github.com/flashbots/mev-boost-relay/common"
@@ -233,6 +236,11 @@ func (s *DatabaseService) GetExecutionPayloadEntryBySlotPkHash(slot uint64, prop
 
 func (s *DatabaseService) SaveDeliveredPayload(slot uint64, proposerPubkey types.PubkeyHex, blockHash types.Hash, signedBlindedBeaconBlock *types.SignedBlindedBeaconBlock) error {
 	blockSubmissionEntry, err := s.GetBlockSubmissionEntry(slot, proposerPubkey.String(), blockHash.String())
+	if errors.Is(err, sql.ErrNoRows) {
+		// might be a race condition where payload is requested while bid is in the process of being written. Wait a bit and try again.
+		time.Sleep(1 * time.Second)
+		blockSubmissionEntry, err = s.GetBlockSubmissionEntry(slot, proposerPubkey.String(), blockHash.String())
+	}
 	if err != nil {
 		return err
 	}
