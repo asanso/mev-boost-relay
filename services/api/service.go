@@ -782,7 +782,12 @@ func (api *RelayAPI) handleGetPayload(w http.ResponseWriter, req *http.Request) 
 
 	// Save information about delivered payload
 	go func() {
-		err := api.db.SaveDeliveredPayload(slot, proposerPubkey, blockHash, payload)
+		err = api.redis.SetStats(datastore.RedisStatsFieldSlotLastPayloadDelivered, slot)
+		if err != nil {
+			log.WithError(err).Error("failed to save delivered payload slot to redis")
+		}
+
+		err = api.db.SaveDeliveredPayload(slot, proposerPubkey, blockHash, payload)
 		if err != nil {
 			log.WithError(err).Error("failed to save delivered payload")
 		}
@@ -833,7 +838,23 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 	log = log.WithFields(logrus.Fields{
 		"slot":          payload.Message.Slot,
 		"builderPubkey": payload.Message.BuilderPubkey.String(),
+		"blockHash":     payload.Message.BlockHash.String(),
 	})
+
+	// Reject new submissions once the payload for this slot was delivered
+	slotStr, err := api.redis.GetStats(datastore.RedisStatsFieldSlotLastPayloadDelivered)
+	if err != nil {
+		log.WithError(err).Error("failed to get delivered payload slot from redis")
+	} else {
+		slotLastPayloadDelivered, err := strconv.ParseUint(slotStr, 10, 64)
+		if err != nil {
+			log.WithError(err).Errorf("failed to parse delivered payload slot from redis: %s", slotStr)
+		} else if payload.Message.Slot <= slotLastPayloadDelivered {
+			log.Info("rejecting submission because payload for this slot was already delivered")
+			api.RespondError(w, http.StatusBadRequest, "payload for this slot was already delivered")
+			return
+		}
+	}
 
 	builderIsHighPrio, builderIsBlacklisted, err := api.redis.GetBlockBuilderStatus(payload.Message.BuilderPubkey.String())
 	if err != nil {
@@ -872,7 +893,6 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 	log = log.WithFields(logrus.Fields{
 		"builderHighPrio": builderIsHighPrio,
 		"proposerPubkey":  payload.Message.ProposerPubkey.String(),
-		"blockHash":       payload.Message.BlockHash.String(),
 		"parentHash":      payload.Message.ParentHash.String(),
 		"value":           payload.Message.Value.String(),
 		"tx":              len(payload.ExecutionPayload.Transactions),
