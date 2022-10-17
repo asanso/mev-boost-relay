@@ -1,11 +1,11 @@
 package database
 
 import (
-	"github.com/flashbots/mev-boost-relay/common"
+	"github.com/flashbots/mev-boost-relay/config"
 )
 
 var (
-	tableBase = common.GetEnv("DB_TABLE_PREFIX", "dev")
+	tableBase = config.GetString("dbTablePrefix")
 
 	TableValidatorRegistration  = tableBase + "_validator_registration"
 	TableExecutionPayload       = tableBase + "_execution_payload"

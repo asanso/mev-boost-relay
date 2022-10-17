@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"github.com/flashbots/mev-boost-relay/common"
+	"github.com/flashbots/mev-boost-relay/config"
 	"github.com/flashbots/mev-boost-relay/database"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -20,7 +22,7 @@ var (
 )
 
 func init() {
-	DataAPIExportPayloads.Flags().StringVar(&postgresDSN, "db", defaultPostgresDSN, "PostgreSQL DSN")
+	DataAPIExportPayloads.Flags().String("db", config.DefaultPostgresDSN, "PostgreSQL DSN")
 	DataAPIExportPayloads.Flags().Uint64Var(&idFirst, "id-from", 0, "start id (inclusive")
 	DataAPIExportPayloads.Flags().Uint64Var(&idLast, "id-to", 0, "end id (inclusive)")
 	DataAPIExportPayloads.Flags().StringVar(&dateStart, "date-start", "", "start date (inclusive)")
@@ -31,7 +33,12 @@ func init() {
 
 var DataAPIExportPayloads = &cobra.Command{
 	Use: "data-api-export-payloads",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		_ = viper.BindPFlag("postgresDSN", cmd.Flags().Lookup("db"))
+	},
 	Run: func(cmd *cobra.Command, args []string) {
+		log.Infof("Config: %+v", config.GetConfig())
+
 		if len(outFiles) == 0 {
 			log.Fatal("no output files specified")
 		}
@@ -42,6 +49,7 @@ var DataAPIExportPayloads = &cobra.Command{
 		}
 
 		// Connect to Postgres
+		postgresDSN := config.GetString("postgresDSN")
 		dbURL, err := url.Parse(postgresDSN)
 		if err != nil {
 			log.WithError(err).Fatalf("couldn't read db URL")

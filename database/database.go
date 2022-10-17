@@ -4,11 +4,11 @@ package database
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/flashbots/go-boost-utils/types"
 	"github.com/flashbots/mev-boost-relay/common"
+	"github.com/flashbots/mev-boost-relay/config"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -54,11 +54,11 @@ func NewDatabaseService(dsn string) (*DatabaseService, error) {
 	db.DB.SetMaxIdleConns(10)
 	db.DB.SetConnMaxIdleTime(0)
 
-	if os.Getenv("PRINT_SCHEMA") == "1" {
+	if config.GetBool("dbPrintSchema") {
 		fmt.Println(schema)
 	}
 
-	if os.Getenv("DB_DONT_APPLY_SCHEMA") == "" {
+	if config.GetString("dbDontApplySchema") == "" {
 		_, err = db.Exec(schema)
 		if err != nil {
 			return nil, err

@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 
 	"github.com/flashbots/go-boost-utils/types"
-	"github.com/flashbots/go-utils/cli"
 	"github.com/flashbots/go-utils/jsonrpc"
+	"github.com/flashbots/mev-boost-relay/config"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 	ErrSimulationFailed = errors.New("simulation failed")
 )
 
-var maxConcurrentBlocks = int64(cli.GetEnvInt("BLOCKSIM_MAX_CONCURRENT", 4)) // 0 for no maximum
+var maxConcurrentBlocks = config.GetInt64("blockSimMaxConcurrent") // 0 for no maximum
 
 type BlockSimulationRateLimiter struct {
 	cv          *sync.Cond

@@ -7,14 +7,16 @@ import (
 	"os"
 	"strings"
 
+	"github.com/flashbots/mev-boost-relay/config"
 	"github.com/flashbots/mev-boost-relay/database"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var doDelete bool
 
 func init() {
-	ArchiveExecutionPayloads.Flags().StringVar(&postgresDSN, "db", defaultPostgresDSN, "PostgreSQL DSN")
+	ArchiveExecutionPayloads.Flags().String("db", config.DefaultPostgresDSN, "PostgreSQL DSN")
 	ArchiveExecutionPayloads.Flags().Uint64Var(&idFirst, "id-from", 0, "start id (inclusive")
 	ArchiveExecutionPayloads.Flags().Uint64Var(&idLast, "id-to", 0, "end id (inclusive)")
 	ArchiveExecutionPayloads.Flags().StringVar(&dateStart, "date-start", "", "start date (inclusive)")
@@ -26,7 +28,12 @@ func init() {
 
 var ArchiveExecutionPayloads = &cobra.Command{
 	Use: "archive-execution-payloads",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		_ = viper.BindPFlag("postgresDSN", cmd.Flags().Lookup("db"))
+	},
 	Run: func(cmd *cobra.Command, args []string) {
+		log.Infof("Config: %+v", config.GetConfig())
+
 		if len(outFiles) == 0 {
 			log.Fatal("no output files specified")
 		}
@@ -37,6 +44,7 @@ var ArchiveExecutionPayloads = &cobra.Command{
 		}
 
 		// Connect to Postgres
+		postgresDSN := config.GetString("postgresDSN")
 		dbURL, err := url.Parse(postgresDSN)
 		if err != nil {
 			log.WithError(err).Fatalf("couldn't read db URL")

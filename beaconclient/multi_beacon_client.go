@@ -3,10 +3,10 @@ package beaconclient
 
 import (
 	"errors"
-	"os"
 	"sync"
 
 	"github.com/flashbots/go-boost-utils/types"
+	"github.com/flashbots/mev-boost-relay/config"
 	"github.com/sirupsen/logrus"
 	uberatomic "go.uber.org/atomic"
 )
@@ -56,7 +56,7 @@ func NewMultiBeaconClient(log *logrus.Entry, beaconInstances []IBeaconInstance) 
 	}
 
 	// feature flags
-	if os.Getenv("ALLOW_SYNCING_BEACON_NODE") != "" {
+	if config.GetString("allowSyncingBeaconNode") != "" {
 		client.log.Warn("env: ALLOW_SYNCING_BEACON_NODE: allow syncing beacon node")
 		client.ffAllowSyncingBeaconNode = true
 	}
