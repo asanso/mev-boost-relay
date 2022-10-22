@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	tableBase = config.GetString("dbTablePrefix")
+	tableBase = config.GetString(config.DBTablePrefix)
 
 	TableValidatorRegistration  = tableBase + "_validator_registration"
 	TableExecutionPayload       = tableBase + "_execution_payload"
