@@ -567,7 +567,7 @@ func (api *RelayAPI) handleRegisterValidator(w http.ResponseWriter, req *http.Re
 		}
 
 		// Check for a previous registration timestamp
-		prevTimestamp, err := api.datastore.GetValidatorRegistrationTimestamp(pkHex)
+		prevTimestamp, err := api.redis.GetValidatorRegistrationTimestamp(pkHex)
 		if err != nil {
 			regLog.WithError(err).Error("error getting last registration timestamp")
 		} else if prevTimestamp >= uint64(timestampInt) {
@@ -827,6 +827,8 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 		"contentLength": req.ContentLength,
 	})
 
+	receivedAt := time.Now().UTC()
+
 	var err error
 	var r io.Reader = req.Body
 	if req.Header.Get("Content-Encoding") == "gzip" {
@@ -944,7 +946,7 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 	}
 
 	var simErr error
-	isBestBid := true // tmp workaround
+	isBestBid := true // not needed anymore since cancellations
 
 	// At end of this function, save builder submission to database (in the background)
 	defer func() {
@@ -979,8 +981,15 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 		}).Info("block validation successful")
 	}
 
-	// 1. Overwrite this builders latest bid
-	// 2. Update the best bid
+	// Ensure this request is still the latest one
+	latestPayloadReceivedAt, err := api.redis.GetBuilderLatestPayloadReceivedAt(payload.Message.Slot, payload.Message.BuilderPubkey.String(), payload.Message.ParentHash.String(), payload.Message.ProposerPubkey.String())
+	if err != nil {
+		log.WithError(err).Error("failed getting latest payload receivedAt from redis")
+	} else if receivedAt.UnixMilli() < latestPayloadReceivedAt {
+		log.Info("already using a newer payload")
+		api.RespondError(w, http.StatusBadRequest, "already using a newer payload")
+		return
+	}
 
 	// Prepare the response data
 	signedBuilderBid, err := BuilderSubmitBlockRequestToSignedBuilderBid(payload, api.blsSk, api.publicKey, api.opts.EthNetDetails.DomainBuilder)
@@ -1026,7 +1035,7 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 	}
 
 	// save this builder's latest bid
-	err = api.redis.SaveLatestBuilderBid(payload.Message.Slot, payload.Message.BuilderPubkey.String(), payload.Message.ParentHash.String(), payload.Message.ProposerPubkey.String(), &getHeaderResponse)
+	err = api.redis.SaveLatestBuilderBid(payload.Message.Slot, payload.Message.BuilderPubkey.String(), payload.Message.ParentHash.String(), payload.Message.ProposerPubkey.String(), receivedAt, &getHeaderResponse)
 	if err != nil {
 		log.WithError(err).Error("could not save latest builder bid")
 		api.RespondError(w, http.StatusInternalServerError, err.Error())
