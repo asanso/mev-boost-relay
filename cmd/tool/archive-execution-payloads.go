@@ -29,7 +29,7 @@ func init() {
 var ArchiveExecutionPayloads = &cobra.Command{
 	Use: "archive-execution-payloads",
 	PreRun: func(cmd *cobra.Command, args []string) {
-		_ = viper.BindPFlag("postgresDSN", cmd.Flags().Lookup("db"))
+		_ = viper.BindPFlag(config.PostgresDSN, cmd.Flags().Lookup("db"))
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(outFiles) == 0 {

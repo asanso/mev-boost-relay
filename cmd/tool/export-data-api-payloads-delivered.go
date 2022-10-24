@@ -34,7 +34,7 @@ func init() {
 var DataAPIExportPayloads = &cobra.Command{
 	Use: "data-api-export-payloads",
 	PreRun: func(cmd *cobra.Command, args []string) {
-		_ = viper.BindPFlag("postgresDSN", cmd.Flags().Lookup("db"))
+		_ = viper.BindPFlag(config.PostgresDSN, cmd.Flags().Lookup("db"))
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(outFiles) == 0 {
@@ -47,7 +47,7 @@ var DataAPIExportPayloads = &cobra.Command{
 		}
 
 		// Connect to Postgres
-		postgresDSN := config.GetString("postgresDSN")
+		postgresDSN := config.GetString(config.PostgresDSN)
 		dbURL, err := url.Parse(postgresDSN)
 		if err != nil {
 			log.WithError(err).Fatalf("couldn't read db URL")
