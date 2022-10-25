@@ -54,11 +54,11 @@ func NewDatabaseService(dsn string) (*DatabaseService, error) {
 	db.DB.SetMaxIdleConns(10)
 	db.DB.SetConnMaxIdleTime(0)
 
-	if config.GetBool(config.DBPrintSchema) {
+	if config.GetBool(config.KeyDBPrintSchema) {
 		fmt.Println(schema)
 	}
 
-	if config.GetString(config.DBDontApplySchema) == "" {
+	if config.GetString(config.KeyDBDontApplySchema) == "" {
 		_, err = db.Exec(schema)
 		if err != nil {
 			return nil, err
