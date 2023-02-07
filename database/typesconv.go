@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/flashbots/mev-boost-relay/common"
-	"github.com/flashbots/mev-boost-relay/types"
 )
 
 func PayloadToExecPayloadEntry(payload *common.BuilderSubmitBlockRequest) (*ExecutionPayloadEntry, error) {
@@ -35,8 +34,8 @@ func PayloadToExecPayloadEntry(payload *common.BuilderSubmitBlockRequest) (*Exec
 	}, nil
 }
 
-func DeliveredPayloadEntryToBidTraceV2JSON(payload *DeliveredPayloadEntry) types.BidTraceV2JSON {
-	return types.BidTraceV2JSON{
+func DeliveredPayloadEntryToBidTraceV2JSON(payload *DeliveredPayloadEntry) common.BidTraceV2JSON {
+	return common.BidTraceV2JSON{
 		Slot:                 payload.Slot,
 		ParentHash:           payload.ParentHash,
 		BlockHash:            payload.BlockHash,
@@ -51,16 +50,16 @@ func DeliveredPayloadEntryToBidTraceV2JSON(payload *DeliveredPayloadEntry) types
 	}
 }
 
-func BuilderSubmissionEntryToBidTraceV2WithTimestampJSON(payload *BuilderBlockSubmissionEntry) types.BidTraceV2WithTimestampJSON {
+func BuilderSubmissionEntryToBidTraceV2WithTimestampJSON(payload *BuilderBlockSubmissionEntry) common.BidTraceV2WithTimestampJSON {
 	timestamp := payload.InsertedAt
 	if payload.ReceivedAt.Valid {
 		timestamp = payload.ReceivedAt.Time
 	}
 
-	return types.BidTraceV2WithTimestampJSON{
+	return common.BidTraceV2WithTimestampJSON{
 		Timestamp:   timestamp.Unix(),
 		TimestampMs: timestamp.UnixMilli(),
-		BidTraceV2JSON: types.BidTraceV2JSON{
+		BidTraceV2JSON: common.BidTraceV2JSON{
 			Slot:                 payload.Slot,
 			ParentHash:           payload.ParentHash,
 			BlockHash:            payload.BlockHash,

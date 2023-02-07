@@ -9,15 +9,16 @@ import (
 	"strings"
 
 	"github.com/attestantio/go-builder-client/api"
+	"github.com/attestantio/go-builder-client/api/capella"
+	apiv1 "github.com/attestantio/go-builder-client/api/v1"
 	"github.com/attestantio/go-builder-client/spec"
 	apiv1capella "github.com/attestantio/go-eth2-client/api/v1/capella"
 	consensusspec "github.com/attestantio/go-eth2-client/spec"
 	"github.com/attestantio/go-eth2-client/spec/bellatrix"
-	"github.com/attestantio/go-eth2-client/spec/capella"
+	consensuscapella "github.com/attestantio/go-eth2-client/spec/capella"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	boostTypes "github.com/flashbots/go-boost-utils/types"
-	"github.com/flashbots/mev-boost-relay/types"
 	"github.com/holiman/uint256"
 )
 
@@ -139,6 +140,100 @@ func NewEthNetworkDetails(networkName string) (ret *EthNetworkDetails, err error
 	}, nil
 }
 
+type BidTraceV2 struct {
+	apiv1.BidTrace
+	BlockNumber uint64 `json:"block_number,string" db:"block_number"`
+	NumTx       uint64 `json:"num_tx,string" db:"num_tx"`
+}
+
+type BidTraceV2JSON struct {
+	Slot                 uint64 `json:"slot,string"`
+	ParentHash           string `json:"parent_hash"`
+	BlockHash            string `json:"block_hash"`
+	BuilderPubkey        string `json:"builder_pubkey"`
+	ProposerPubkey       string `json:"proposer_pubkey"`
+	ProposerFeeRecipient string `json:"proposer_fee_recipient"`
+	GasLimit             uint64 `json:"gas_limit,string"`
+	GasUsed              uint64 `json:"gas_used,string"`
+	Value                string `json:"value"`
+	NumTx                uint64 `json:"num_tx,string"`
+	BlockNumber          uint64 `json:"block_number,string"`
+}
+
+func (b *BidTraceV2JSON) CSVHeader() []string {
+	return []string{
+		"slot",
+		"parent_hash",
+		"block_hash",
+		"builder_pubkey",
+		"proposer_pubkey",
+		"proposer_fee_recipient",
+		"gas_limit",
+		"gas_used",
+		"value",
+		"num_tx",
+		"block_number",
+	}
+}
+
+func (b *BidTraceV2JSON) ToCSVRecord() []string {
+	return []string{
+		fmt.Sprint(b.Slot),
+		b.ParentHash,
+		b.BlockHash,
+		b.BuilderPubkey,
+		b.ProposerPubkey,
+		b.ProposerFeeRecipient,
+		fmt.Sprint(b.GasLimit),
+		fmt.Sprint(b.GasUsed),
+		b.Value,
+		fmt.Sprint(b.NumTx),
+		fmt.Sprint(b.BlockNumber),
+	}
+}
+
+type BidTraceV2WithTimestampJSON struct {
+	BidTraceV2JSON
+	Timestamp   int64 `json:"timestamp,string,omitempty"`
+	TimestampMs int64 `json:"timestamp_ms,string,omitempty"`
+}
+
+func (b *BidTraceV2WithTimestampJSON) CSVHeader() []string {
+	return []string{
+		"slot",
+		"parent_hash",
+		"block_hash",
+		"builder_pubkey",
+		"proposer_pubkey",
+		"proposer_fee_recipient",
+		"gas_limit",
+		"gas_used",
+		"value",
+		"num_tx",
+		"block_number",
+		"timestamp",
+		"timestamp_ms",
+	}
+}
+
+func (b *BidTraceV2WithTimestampJSON) ToCSVRecord() []string {
+	return []string{
+		fmt.Sprint(b.Slot),
+		b.ParentHash,
+		b.BlockHash,
+		b.BuilderPubkey,
+		b.ProposerPubkey,
+		b.ProposerFeeRecipient,
+		fmt.Sprint(b.GasLimit),
+		fmt.Sprint(b.GasUsed),
+		b.Value,
+		fmt.Sprint(b.NumTx),
+		fmt.Sprint(b.BlockNumber),
+		fmt.Sprint(b.Timestamp),
+		fmt.Sprint(b.TimestampMs),
+	}
+}
+
 type SignedBeaconBlindedBlock struct {
 	Bellatrix *boostTypes.SignedBlindedBeaconBlock
 	Capella   *apiv1capella.SignedBlindedBeaconBlock
@@ -196,7 +291,7 @@ func (s *SignedBeaconBlindedBlock) Message() boostTypes.HashTreeRoot {
 
 type SignedBeaconBlock struct {
 	Bellatrix *boostTypes.SignedBeaconBlock
-	Capella   *capella.SignedBeaconBlock
+	Capella   *consensuscapella.SignedBeaconBlock
 }
 
 func (s *SignedBeaconBlock) MarshalJSON() ([]byte, error) {
@@ -222,12 +317,12 @@ func (s *SignedBeaconBlock) BlockHash() string {
 
 type ExecutionPayloadHeader struct {
 	Bellatrix *boostTypes.ExecutionPayloadHeader
-	Capella   *capella.ExecutionPayloadHeader
+	Capella   *consensuscapella.ExecutionPayloadHeader
 }
 
 type ExecutionPayload struct {
 	Bellatrix *boostTypes.ExecutionPayload
-	Capella   *capella.ExecutionPayload
+	Capella   *consensuscapella.ExecutionPayload
 }
 
 func (e *ExecutionPayload) MarshalJSON() ([]byte, error) {
@@ -238,7 +333,7 @@ func (e *ExecutionPayload) MarshalJSON() ([]byte, error) {
 }
 
 func (e *ExecutionPayload) UnmarshalJSON(data []byte) error {
-	capella := new(capella.ExecutionPayload)
+	capella := new(consensuscapella.ExecutionPayload)
 	err := json.Unmarshal(data, capella)
 	if err == nil {
 		e.Capella = capella
@@ -295,7 +390,7 @@ func (e *ExecutionPayload) TxNum() int {
 
 type BuilderSubmitBlockRequest struct {
 	Bellatrix *boostTypes.BuilderSubmitBlockRequest
-	Capella   *types.CapellaBuilderSubmitBlockRequest
+	Capella   *capella.SubmitBlockRequest
 }
 
 func (b *BuilderSubmitBlockRequest) MarshalJSON() ([]byte, error) {
@@ -309,7 +404,7 @@ func (b *BuilderSubmitBlockRequest) MarshalJSON() ([]byte, error) {
 }
 
 func (b *BuilderSubmitBlockRequest) UnmarshalJSON(data []byte) error {
-	capella := new(types.CapellaBuilderSubmitBlockRequest)
+	capella := new(capella.SubmitBlockRequest)
 	err := json.Unmarshal(data, capella)
 	if err == nil {
 		b.Capella = capella
@@ -494,17 +589,17 @@ func (b *BuilderSubmitBlockRequest) Random() string {
 	return ""
 }
 
-func (b *BuilderSubmitBlockRequest) Message() *boostTypes.BidTrace {
+func (b *BuilderSubmitBlockRequest) Message() *apiv1.BidTrace {
 	if b.Capella != nil {
-		return BidTraceToBoostBid(b.Capella.Message)
+		return b.Capella.Message
 	}
 	if b.Bellatrix == nil {
-		return b.Bellatrix.Message
+		return BoostBidToBidTrace(b.Bellatrix.Message)
 	}
 	return nil
 }
 
-func BidTraceToBoostBid(bidTrace *types.BidTrace) *boostTypes.BidTrace {
+func BidTraceToBoostBid(bidTrace *apiv1.BidTrace) *boostTypes.BidTrace {
 	return &boostTypes.BidTrace{
 		BuilderPubkey:        boostTypes.PublicKey(bidTrace.BuilderPubkey),
 		Slot:                 bidTrace.Slot,
@@ -518,14 +613,14 @@ func BidTraceToBoostBid(bidTrace *types.BidTrace) *boostTypes.BidTrace {
 	}
 }
 
-func BoostBidToBidTrace(bidTrace *boostTypes.BidTrace) *types.BidTrace {
-	return &types.BidTrace{
+func BoostBidToBidTrace(bidTrace *boostTypes.BidTrace) *apiv1.BidTrace {
+	return &apiv1.BidTrace{
 		BuilderPubkey:        phase0.BLSPubKey(bidTrace.BuilderPubkey),
 		Slot:                 bidTrace.Slot,
 		ProposerPubkey:       phase0.BLSPubKey(bidTrace.ProposerPubkey),
 		ProposerFeeRecipient: bellatrix.ExecutionAddress(bidTrace.ProposerFeeRecipient),
 		BlockHash:            phase0.Hash32(bidTrace.BlockHash),
-		Value:                *uint256.NewInt(bidTrace.Value.BigInt().Uint64()),
+		Value:                uint256.NewInt(bidTrace.Value.BigInt().Uint64()),
 		ParentHash:           phase0.Hash32(bidTrace.ParentHash),
 		GasLimit:             bidTrace.GasLimit,
 		GasUsed:              bidTrace.GasUsed,
@@ -600,6 +695,13 @@ func (p *GetHeaderResponse) Value() *big.Int {
 	}
 	if p.Bellatrix != nil {
 		return p.Bellatrix.Data.Message.Value.BigInt()
+	}
+	return nil
+}
+
+func (b *BuilderSubmitBlockRequest) Withdrawals() []*consensuscapella.Withdrawal {
+	if b.Capella != nil {
+		return b.Capella.ExecutionPayload.Withdrawals
 	}
 	return nil
 }

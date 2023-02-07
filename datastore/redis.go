@@ -13,7 +13,6 @@ import (
 	boostTypes "github.com/flashbots/go-boost-utils/types"
 	"github.com/flashbots/go-utils/cli"
 	"github.com/flashbots/mev-boost-relay/common"
-	"github.com/flashbots/mev-boost-relay/types"
 	"github.com/go-redis/redis/v9"
 )
 
@@ -309,14 +308,14 @@ func (r *RedisCache) GetExecutionPayload(slot uint64, proposerPubkey, blockHash 
 	return resp, err
 }
 
-func (r *RedisCache) SaveBidTrace(trace *types.BidTraceV2) (err error) {
+func (r *RedisCache) SaveBidTrace(trace *common.BidTraceV2) (err error) {
 	key := r.keyCacheBidTrace(trace.Slot, trace.ProposerPubkey.String(), trace.BlockHash.String())
 	return r.SetObj(key, trace, expiryBidCache)
 }
 
-func (r *RedisCache) GetBidTrace(slot uint64, proposerPubkey, blockHash string) (*types.BidTraceV2, error) {
+func (r *RedisCache) GetBidTrace(slot uint64, proposerPubkey, blockHash string) (*common.BidTraceV2, error) {
 	key := r.keyCacheBidTrace(slot, proposerPubkey, blockHash)
-	resp := new(types.BidTraceV2)
+	resp := new(common.BidTraceV2)
 	err := r.GetObj(key, resp)
 	if errors.Is(err, redis.Nil) {
 		return nil, nil

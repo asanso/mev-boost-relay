@@ -15,7 +15,6 @@ import (
 	"github.com/flashbots/go-boost-utils/bls"
 	boostTypes "github.com/flashbots/go-boost-utils/types"
 	"github.com/flashbots/mev-boost-relay/common"
-	"github.com/flashbots/mev-boost-relay/types"
 )
 
 var (
@@ -124,14 +123,14 @@ func BuilderSubmitBlockRequestToSignedBuilderBid(req *boostTypes.BuilderSubmitBl
 	}, nil
 }
 
-func CapellaBuilderSubmitBlockRequestToSignedBuilderBid(req *types.CapellaBuilderSubmitBlockRequest, sk *bls.SecretKey, pubkey *phase0.BLSPubKey, domain boostTypes.Domain) (*capella.SignedBuilderBid, error) {
+func CapellaBuilderSubmitBlockRequestToSignedBuilderBid(req *capella.SubmitBlockRequest, sk *bls.SecretKey, pubkey *phase0.BLSPubKey, domain boostTypes.Domain) (*capella.SignedBuilderBid, error) {
 	header, err := CapellaPayloadToPayloadHeader(req.ExecutionPayload)
 	if err != nil {
 		return nil, err
 	}
 
 	builderBid := capella.BuilderBid{
-		Value:  &req.Message.Value,
+		Value:  req.Message.Value,
 		Header: header,
 		Pubkey: *pubkey,
 	}

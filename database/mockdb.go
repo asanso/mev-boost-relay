@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/flashbots/mev-boost-relay/common"
-	"github.com/flashbots/mev-boost-relay/types"
 )
 
 type MockDB struct{}
@@ -73,7 +72,7 @@ func (db MockDB) GetBuilderSubmissionsBySlots(slotFrom, slotTo uint64) (entries 
 	return nil, nil
 }
 
-func (db MockDB) SaveDeliveredPayload(bidTrace *types.BidTraceV2, signedBlindedBeaconBlock *common.SignedBeaconBlindedBlock) error {
+func (db MockDB) SaveDeliveredPayload(bidTrace *common.BidTraceV2, signedBlindedBeaconBlock *common.SignedBeaconBlindedBlock) error {
 	return nil
 }
 
