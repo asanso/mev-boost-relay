@@ -397,7 +397,7 @@ func (b *BuilderSubmitBlockRequest) MarshalJSON() ([]byte, error) {
 	if b.Capella != nil {
 		return json.Marshal(b.Capella)
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return json.Marshal(b.Bellatrix)
 	}
 	return nil, ErrEmptyPayload
@@ -423,7 +423,7 @@ func (b *BuilderSubmitBlockRequest) HasExecutionPayload() bool {
 	if b.Capella != nil {
 		return b.Capella.ExecutionPayload != nil
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.ExecutionPayload != nil
 	}
 	return false
@@ -433,7 +433,7 @@ func (b *BuilderSubmitBlockRequest) Slot() uint64 {
 	if b.Capella != nil {
 		return b.Capella.Message.Slot
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.Message.Slot
 	}
 	return 0
@@ -443,7 +443,7 @@ func (b *BuilderSubmitBlockRequest) BlockHash() string {
 	if b.Capella != nil {
 		return b.Capella.Message.BlockHash.String()
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.Message.BlockHash.String()
 	}
 	return ""
@@ -453,7 +453,7 @@ func (b *BuilderSubmitBlockRequest) ExecutionPayloadBlockHash() string {
 	if b.Capella != nil {
 		return b.Capella.ExecutionPayload.BlockHash.String()
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.ExecutionPayload.BlockHash.String()
 	}
 	return ""
@@ -463,7 +463,7 @@ func (b *BuilderSubmitBlockRequest) BuilderPubkey() phase0.BLSPubKey {
 	if b.Capella != nil {
 		return b.Capella.Message.BuilderPubkey
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return phase0.BLSPubKey(b.Bellatrix.Message.BuilderPubkey)
 	}
 	return phase0.BLSPubKey{}
@@ -473,7 +473,7 @@ func (b *BuilderSubmitBlockRequest) ProposerFeeRecipient() string {
 	if b.Capella != nil {
 		return b.Capella.Message.ProposerFeeRecipient.String()
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.Message.ProposerFeeRecipient.String()
 	}
 	return ""
@@ -483,7 +483,7 @@ func (b *BuilderSubmitBlockRequest) Timestamp() uint64 {
 	if b.Capella != nil {
 		return b.Capella.ExecutionPayload.Timestamp
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.ExecutionPayload.Timestamp
 	}
 	return 0
@@ -493,7 +493,7 @@ func (b *BuilderSubmitBlockRequest) ProposerPubkey() string {
 	if b.Capella != nil {
 		return b.Capella.Message.ProposerPubkey.String()
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.Message.ProposerPubkey.String()
 	}
 	return ""
@@ -503,7 +503,7 @@ func (b *BuilderSubmitBlockRequest) ParentHash() string {
 	if b.Capella != nil {
 		return b.Capella.Message.ParentHash.String()
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.Message.ParentHash.String()
 	}
 	return ""
@@ -513,7 +513,7 @@ func (b *BuilderSubmitBlockRequest) ExecutionPayloadParentHash() string {
 	if b.Capella != nil {
 		return b.Capella.ExecutionPayload.ParentHash.String()
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.ExecutionPayload.ParentHash.String()
 	}
 	return ""
@@ -523,7 +523,7 @@ func (b *BuilderSubmitBlockRequest) Value() *big.Int {
 	if b.Capella != nil {
 		return b.Capella.Message.Value.ToBig()
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.Message.Value.BigInt()
 	}
 	return nil
@@ -533,7 +533,7 @@ func (b *BuilderSubmitBlockRequest) TxNum() int {
 	if b.Capella != nil {
 		return len(b.Capella.ExecutionPayload.Transactions)
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return len(b.Bellatrix.ExecutionPayload.Transactions)
 	}
 	return 0
@@ -543,7 +543,7 @@ func (b *BuilderSubmitBlockRequest) BlockNumber() uint64 {
 	if b.Capella != nil {
 		return b.Capella.ExecutionPayload.BlockNumber
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.ExecutionPayload.BlockNumber
 	}
 	return 0
@@ -553,7 +553,7 @@ func (b *BuilderSubmitBlockRequest) GasUsed() uint64 {
 	if b.Capella != nil {
 		return b.Capella.ExecutionPayload.GasUsed
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.ExecutionPayload.GasUsed
 	}
 	return 0
@@ -563,7 +563,7 @@ func (b *BuilderSubmitBlockRequest) GasLimit() uint64 {
 	if b.Capella != nil {
 		return b.Capella.ExecutionPayload.GasLimit
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.ExecutionPayload.GasLimit
 	}
 	return 0
@@ -573,7 +573,7 @@ func (b *BuilderSubmitBlockRequest) Signature() phase0.BLSSignature {
 	if b.Capella != nil {
 		return b.Capella.Signature
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return phase0.BLSSignature(b.Bellatrix.Signature)
 	}
 	return phase0.BLSSignature{}
@@ -583,7 +583,7 @@ func (b *BuilderSubmitBlockRequest) Random() string {
 	if b.Capella != nil {
 		return fmt.Sprintf("%#x", b.Capella.ExecutionPayload.PrevRandao)
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return b.Bellatrix.ExecutionPayload.Random.String()
 	}
 	return ""
@@ -593,7 +593,7 @@ func (b *BuilderSubmitBlockRequest) Message() *apiv1.BidTrace {
 	if b.Capella != nil {
 		return b.Capella.Message
 	}
-	if b.Bellatrix == nil {
+	if b.Bellatrix != nil {
 		return BoostBidToBidTrace(b.Bellatrix.Message)
 	}
 	return nil
