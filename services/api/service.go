@@ -936,7 +936,7 @@ func (api *RelayAPI) updatedExpectedWithdrawals(slot uint64) {
 	api.expectedWithdrawalsUpdating = slot
 	api.expectedWithdrawalsLock.Unlock()
 
-	// get randao from BN
+	// get withdrawals from BN
 	api.log.Debugf("- querying BN for withdrawals for slot %d", slot)
 	withdrawals, err := api.beaconClient.GetWithdrawals(slot)
 	if err != nil {
@@ -950,16 +950,17 @@ func (api *RelayAPI) updatedExpectedWithdrawals(slot uint64) {
 	// after request, check if still the latest, then update
 	api.expectedWithdrawalsLock.Lock()
 	defer api.expectedWithdrawalsLock.Unlock()
-	api.log.Debugf("- after BN withdrawals: slot %d, latest: %d", slot, api.expectedWithdrawalsRoot.slot)
+	targetSlot := slot + 1
+	api.log.Debugf("- after BN withdrawals: slot %d, targetSlot: %d latest: %d", slot, targetSlot, api.expectedWithdrawalsRoot.slot)
 
 	// update if still the latest
-	if slot > api.expectedWithdrawalsRoot.slot {
+	if targetSlot >= api.expectedWithdrawalsRoot.slot {
 		withdrawalsRoot := ComputeWithdrawalsRoot(withdrawals.Data.Withdrawals)
 		api.expectedWithdrawalsRoot = withdrawalsHelper{
-			slot: slot,
+			slot: targetSlot, // the retrieved withdrawals is for the next slot
 			root: withdrawalsRoot,
 		}
-		api.log.WithField("slot", slot).Infof("updated expected withdrawals root to %s for slot %d", withdrawalsRoot, slot)
+		api.log.WithField("slot", slot).Infof("updated expected withdrawals root to %s for slot %d", withdrawalsRoot, targetSlot)
 	}
 }
 
@@ -1002,7 +1003,7 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 
 	log = log.WithFields(logrus.Fields{
 		"slot":          payload.Slot(),
-		"builderPubkey": payload.BuilderPubkey(),
+		"builderPubkey": payload.BuilderPubkey().String(),
 		"blockHash":     payload.BlockHash(),
 	})
 
@@ -1052,7 +1053,7 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 	// - check for validity happens later, again after validation (to use some time for BN request to finish...)
 	api.expectedWithdrawalsLock.RLock()
 	if payload.Slot() > api.expectedWithdrawalsRoot.slot {
-		go api.updatedExpectedWithdrawals(payload.Slot())
+		go api.updatedExpectedWithdrawals(payload.Slot() - 1)
 	}
 	api.expectedWithdrawalsLock.RUnlock()
 
