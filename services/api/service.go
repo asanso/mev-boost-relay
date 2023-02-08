@@ -1142,7 +1142,7 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 			api.RespondError(w, http.StatusInternalServerError, "withdrawals are not known yet")
 			return
 		} else if expectedWithdrawalsRoot.root != withdrawalsRoot {
-			msg := fmt.Sprintf("incorrect withdrawals root - got: %s, expected: %s", withdrawalsRoot, expectedWithdrawalsRoot.root)
+			msg := fmt.Sprintf("incorrect withdrawals root - got: %s, expected: %s", withdrawalsRoot.String(), expectedWithdrawalsRoot.root.String())
 			log.Info(msg)
 			api.RespondError(w, http.StatusBadRequest, msg)
 			return
