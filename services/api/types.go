@@ -8,11 +8,9 @@ import (
 	"github.com/attestantio/go-builder-client/api/capella"
 	"github.com/attestantio/go-builder-client/spec"
 	consensusspec "github.com/attestantio/go-eth2-client/spec"
+	consensusbellatrix "github.com/attestantio/go-eth2-client/spec/bellatrix"
 	consensuscapella "github.com/attestantio/go-eth2-client/spec/capella"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
-	gethCommon "github.com/ethereum/go-ethereum/common"
-	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/trie"
 	"github.com/flashbots/go-boost-utils/bls"
 	boostTypes "github.com/flashbots/go-boost-utils/types"
 	"github.com/flashbots/mev-boost-relay/common"
@@ -152,24 +150,16 @@ func CapellaPayloadToPayloadHeader(p *consensuscapella.ExecutionPayload) (*conse
 		return nil, ErrEmptyPayload
 	}
 
-	transactionData := make([]*gethTypes.Transaction, len(p.Transactions))
-	for i, encTx := range p.Transactions {
-		var tx gethTypes.Transaction
-
-		if err := tx.UnmarshalBinary(encTx); err != nil {
-			return nil, ErrInvalidTransaction
-		}
-		transactionData[i] = &tx
+	transactions := consensusbellatrix.Transactions{Transactions: p.Transactions}
+	transactionsRoot, err := transactions.HashTreeRoot()
+	if err != nil {
+		return nil, err
 	}
 
-	withdrawalData := make([]*gethTypes.Withdrawal, len(p.Withdrawals))
-	for i, withdrawal := range p.Withdrawals {
-		withdrawalData[i] = &gethTypes.Withdrawal{
-			Index:     uint64(withdrawal.Index),
-			Validator: uint64(withdrawal.ValidatorIndex),
-			Address:   gethCommon.Address(withdrawal.Address),
-			Amount:    uint64(withdrawal.Amount),
-		}
+	withdrawals := consensuscapella.Withdrawals{Withdrawals: p.Withdrawals}
+	withdrawalsRoot, err := withdrawals.HashTreeRoot()
+	if err != nil {
+		return nil, err
 	}
 
 	return &consensuscapella.ExecutionPayloadHeader{
@@ -186,8 +176,8 @@ func CapellaPayloadToPayloadHeader(p *consensuscapella.ExecutionPayload) (*conse
 		ExtraData:        p.ExtraData,
 		BaseFeePerGas:    p.BaseFeePerGas,
 		BlockHash:        p.BlockHash,
-		TransactionsRoot: phase0.Root(gethTypes.DeriveSha(gethTypes.Transactions(transactionData), trie.NewStackTrie(nil))),
-		WithdrawalsRoot:  phase0.Root(gethTypes.DeriveSha(gethTypes.Withdrawals(withdrawalData), trie.NewStackTrie(nil))),
+		TransactionsRoot: transactionsRoot,
+		WithdrawalsRoot:  withdrawalsRoot,
 	}, nil
 }
 

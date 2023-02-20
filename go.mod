@@ -78,3 +78,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// replace github.com/attestantio/go-eth2-client with custom fork
+replace github.com/attestantio/go-eth2-client => github.com/avalonche/go-eth2-client v0.0.0-20230220205736-f9665d7ade90

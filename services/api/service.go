@@ -961,7 +961,12 @@ func (api *RelayAPI) updatedExpectedWithdrawals(slot uint64) {
 
 	// update if still the latest
 	if targetSlot >= api.expectedWithdrawalsRoot.slot {
-		withdrawalsRoot := ComputeWithdrawalsRoot(withdrawals.Data.Withdrawals)
+		withdrawalsRoot, err := ComputeWithdrawalsRoot(withdrawals.Data.Withdrawals)
+		if err != nil {
+			api.log.WithField("slot", slot).WithError(err).Warn("failed to compute withdrawals root")
+			api.expectedWithdrawalsUpdating = 0
+			return
+		}
 		api.expectedWithdrawalsRoot = withdrawalsHelper{
 			slot: targetSlot, // the retrieved withdrawals is for the next slot
 			root: withdrawalsRoot,
@@ -1142,7 +1147,12 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 		api.expectedWithdrawalsLock.RLock()
 		expectedWithdrawalsRoot := api.expectedWithdrawalsRoot
 		api.expectedWithdrawalsLock.RUnlock()
-		withdrawalsRoot := ComputeWithdrawalsRoot(payload.Withdrawals())
+		withdrawalsRoot, err := ComputeWithdrawalsRoot(payload.Withdrawals())
+		if err != nil {
+			log.WithError(err).Error("could not compute withdrawals root")
+			api.RespondError(w, http.StatusInternalServerError, "could not compute withdrawals root")
+			return
+		}
 		if expectedWithdrawalsRoot.slot != payload.Slot() { // we still don't have the withdrawals yet
 			log.Warn("withdrawals are not known yet")
 			api.RespondError(w, http.StatusInternalServerError, "withdrawals are not known yet")
