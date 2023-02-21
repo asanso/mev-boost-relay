@@ -946,7 +946,11 @@ func (api *RelayAPI) updatedExpectedWithdrawals(slot uint64) {
 	api.log.Debugf("- querying BN for withdrawals for slot %d", slot)
 	withdrawals, err := api.beaconClient.GetWithdrawals(slot)
 	if err != nil {
-		api.log.WithField("slot", slot).WithError(err).Warn("failed to get withdrawals from beacon node")
+		if errors.Is(err, beaconclient.ErrWithdrawalsBeforeCapella) {
+			api.log.WithField("slot", slot).WithError(err).Debug("attempted to fetch withdrawals before capella")
+		} else {
+			api.log.WithField("slot", slot).WithError(err).Warn("failed to get withdrawals from beacon node")
+		}
 		api.expectedWithdrawalsLock.Lock()
 		api.expectedWithdrawalsUpdating = 0
 		api.expectedWithdrawalsLock.Unlock()

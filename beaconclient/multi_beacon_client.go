@@ -4,6 +4,7 @@ package beaconclient
 import (
 	"errors"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/flashbots/go-boost-utils/types"
@@ -13,8 +14,9 @@ import (
 )
 
 var (
-	ErrBeaconNodeSyncing      = errors.New("beacon node is syncing or unavailable")
-	ErrBeaconNodesUnavailable = errors.New("all beacon nodes responded with error")
+	ErrBeaconNodeSyncing        = errors.New("beacon node is syncing or unavailable")
+	ErrBeaconNodesUnavailable   = errors.New("all beacon nodes responded with error")
+	ErrWithdrawalsBeforeCapella = errors.New("withdrawals are not supported before capella")
 )
 
 // IMultiBeaconClient is the interface for the MultiBeaconClient, which can manage several beacon client instances under the hood
@@ -291,16 +293,24 @@ func (c *MultiBeaconClient) GetRandao(slot uint64) (randaoResp *GetRandaoRespons
 }
 
 // GetWithdrawals - 3500/eth/v1/beacon/states/<slot>/withdrawals
-func (c *MultiBeaconClient) GetWithdrawals(slot uint64) (randaoResp *GetWithdrawalsResponse, err error) {
+func (c *MultiBeaconClient) GetWithdrawals(slot uint64) (withdrawalsResp *GetWithdrawalsResponse, err error) {
 	clients := c.beaconInstancesByLastResponse()
 	for _, client := range clients {
 		log := c.log.WithField("uri", client.GetURI())
-		if randaoResp, err = client.GetWithdrawals(slot); err != nil {
+		if withdrawalsResp, err = client.GetWithdrawals(slot); err != nil {
+			if strings.Contains(err.Error(), "Withdrawals not enabled before capella") {
+				break
+			}
 			log.WithField("slot", slot).WithError(err).Warn("failed to get withdrawals")
 			continue
 		}
 
-		return randaoResp, nil
+		return withdrawalsResp, nil
+	}
+
+	if strings.Contains(err.Error(), "Withdrawals not enabled before capella") {
+		c.log.WithField("slot", slot).WithError(err).Debug("failed to get withdrawals as capella has not been reached")
+		return nil, ErrWithdrawalsBeforeCapella
 	}
 
 	c.log.WithField("slot", slot).WithError(err).Warn("failed to get withdrawals from any CL node")

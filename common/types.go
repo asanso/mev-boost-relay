@@ -829,11 +829,9 @@ func (p *GetHeaderResponse) MarshalJSON() ([]byte, error) {
 
 func (p *GetHeaderResponse) Value() *big.Int {
 	if p.Capella != nil {
-		fmt.Println(p.Capella.Capella.Message.Value)
 		return p.Capella.Capella.Message.Value.ToBig()
 	}
 	if p.Bellatrix != nil {
-		fmt.Println(p.Bellatrix.Data.Message.Value)
 		return p.Bellatrix.Data.Message.Value.BigInt()
 	}
 	return nil
