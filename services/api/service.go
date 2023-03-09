@@ -77,6 +77,7 @@ var (
 	apiWriteTimeoutMs      = cli.GetEnvInt("API_TIMEOUT_WRITE_MS", 10000)
 	apiIdleTimeoutMs       = cli.GetEnvInt("API_TIMEOUT_IDLE_MS", 3000)
 	apiMaxHeaderBytes      = cli.GetEnvInt("API_MAX_HEADER_BYTES", 60000)
+	apiMaxBodyBytes        = cli.GetEnvInt("API_MAX_BODY_BYTES", 50*1024*1024) // 50MB by default
 )
 
 // RelayAPIOpts contains the options for a relay
@@ -587,8 +588,8 @@ func (api *RelayAPI) handleRegisterValidator(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
+	var body []byte
+	if _, err := http.MaxBytesReader(w, req.Body, int64(apiMaxBodyBytes)).Read(body); err != nil {
 		log.WithError(err).WithField("contentLength", req.ContentLength).Warn("failed to read request body")
 		api.RespondError(w, http.StatusBadRequest, "failed to read request body")
 		return
