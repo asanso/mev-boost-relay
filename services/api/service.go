@@ -315,10 +315,19 @@ func (api *RelayAPI) StartServer() (err error) {
 	if err != nil {
 		return err
 	}
-	api.log.Infof("genesis info: %d", api.genesisInfo.Data.GenesisTime)
+	api.log.WithField("genesis_info", api.genesisInfo).Infof("received genesis info from beacon node")
+
+	// Ensure beacon node genesis information matches that expected one (configured through cli arguments)
+	if api.genesisInfo.Data.GenesisForkVersion != api.opts.EthNetDetails.GenesisForkVersionHex {
+		return fmt.Errorf("genesis fork version mismatch: expected=%s got=%s", api.opts.EthNetDetails.GenesisForkVersionHex, api.genesisInfo.Data.GenesisForkVersion)
+	}
+
+	if api.genesisInfo.Data.GenesisValidatorsRoot != api.opts.EthNetDetails.GenesisValidatorsRootHex {
+		return fmt.Errorf("genesis validators root mismatch: expected=%s got=%s", api.opts.EthNetDetails.GenesisValidatorsRootHex, api.genesisInfo.Data.GenesisValidatorsRoot)
+	}
 
 	forkSchedule, err := api.beaconClient.GetForkSchedule()
-	api.log.WithError(err).WithField("forkSchedule", forkSchedule).Debug("forkSchedule received from beacon node")
+	api.log.WithError(err).WithField("forkSchedule", forkSchedule).Info("forkSchedule received from beacon node")
 	if err != nil {
 		return err
 	}
