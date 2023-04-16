@@ -558,6 +558,7 @@ func (api *RelayAPI) processNewSlot(headSlot uint64) {
 
 	// store the head slot
 	api.headSlot.Store(headSlot)
+	go api.blockSimRateLimiter.updateHeadSlot(headSlot)
 
 	// only for builder-api
 	if api.opts.BlockBuilderAPI {
@@ -1379,15 +1380,16 @@ func (api *RelayAPI) handleSubmitNewBlock(w http.ResponseWriter, req *http.Reque
 		}
 	}
 
-	// Simulate the block submission and save to db
+	//
+	// Simulate the payload now
+	//
 	timeBeforeValidation := time.Now().UTC()
 	log = log.WithField("timestampBeforeValidation", timeBeforeValidation.UTC().UnixMilli())
 	validationRequestPayload := &common.BuilderBlockValidationRequest{
 		BuilderSubmitBlockRequest: *payload,
 		RegisteredGasLimit:        slotDuty.GasLimit,
 	}
-	simErr = api.blockSimRateLimiter.send(req.Context(), validationRequestPayload, builderIsHighPrio)
-
+	simErr = api.blockSimRateLimiter.send(req.Context(), validationRequestPayload, builderIsHighPrio, true)
 	if simErr != nil {
 		log = log.WithField("simErr", simErr.Error())
 		log.WithError(simErr).WithFields(logrus.Fields{
